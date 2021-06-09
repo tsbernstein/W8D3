@@ -2,6 +2,7 @@
 if (typeof window === "undefined") {
   var Piece = require("./piece");
 }
+
 // DON'T TOUCH THIS CODE
 
 /**
@@ -9,11 +10,12 @@ if (typeof window === "undefined") {
  * and two white pieces at [3, 3] and [4, 4]
  */
 function _makeGrid() {
-  let grid = Array.from(new Array(8), () => new Array(8));
-  grid[3][4] = new Piece('black');
-  grid[4][3] = new Piece('black');
-  grid[3][3] = new Piece('white');
-  grid[4][4] = new Piece('white');
+  // let grid = Array.from(new Array(8), () => new Array(8));
+  let grid = new Array(8).fill(0).map((el) => new Array(8).fill(undefined));
+  grid[3][4] = new Piece("black");
+  grid[4][3] = new Piece("black");
+  grid[3][3] = new Piece("white");
+  grid[4][4] = new Piece("white");
   return grid;
 }
 
@@ -49,18 +51,34 @@ Board.prototype.isValidPos = function (pos) {
  * Returns the piece at a given [x, y] position,
  * throwing an Error if the position is invalid.
  */
-Board.prototype.getPiece = function (pos) {};
+Board.prototype.getPiece = function (pos) {
+  if (!this.isValidPos(pos)) {
+    throw new Error(`Not valid pos!`);
+  }
+  [row, col] = pos;
+  return this.grid[row][col];
+};
 
 /**
  * Checks if the piece at a given position
  * matches a given color.
  */
-Board.prototype.isMine = function (pos, color) {};
+Board.prototype.isMine = function (pos, color) {
+  if (this.getPiece(pos) && this.getPiece(pos).color === color) {
+    return true;
+  }
+  return false;
+};
 
 /**
  * Checks if a given position has a piece on it.
  */
-Board.prototype.isOccupied = function (pos) {};
+Board.prototype.isOccupied = function (pos) {
+  if (this.getPiece(pos)) {
+    return true;
+  }
+  return false;
+};
 
 /**
  * Recursively follows a direction away from a starting position, adding each
@@ -74,8 +92,40 @@ Board.prototype.isOccupied = function (pos) {};
  * Returns empty array if it hits an empty position.
  *
  * Returns empty array if no pieces of the opposite color are found.
- */
-Board.prototype._positionsToFlip = function (pos, color, dir, piecesToFlip) {};
+//  */
+Board.prototype._positionsToFlip = function (pos, color, dir,result = []) {
+
+  let next_pos =  [pos[0] + dir[0], pos[1] + dir[1]];
+  if (
+    !this.isValidPos(next_pos) ||
+    !this.isOccupied(next_pos) ||
+    this.isMine(next_pos,color)
+  ) {
+    return result;
+  }
+  result.push(next_pos)
+  return this._positionsToFlip(pos,color,dir,result)
+};
+
+Board.prototype._positionsToFlip = function (pos, color, dir, piecesToFlip) {
+  if (!piecesToFlip) {
+    piecesToFlip = [];
+  } else {
+    piecesToFlip.push(pos);
+  }
+  let nextPos = [pos[0] + dir[0], pos[1] + dir[1]];
+  
+  if (!this.isValidPos(nextPos)) {
+    return [];
+  } else if (!this.isOccupied(nextPos)) {
+    return [];
+  } else if (this.isMine(nextPos, color)) {
+    return piecesToFlip.length == 0 ? [] : piecesToFlip;
+  } else {
+    return this._positionsToFlip(nextPos, color, dir, piecesToFlip);
+  }
+}
+
 
 /**
  * Checks that a position is not already occupied and that the color
@@ -112,7 +162,12 @@ Board.prototype.isOver = function () {};
 /**
  * Prints a string representation of the Board to the console.
  */
-Board.prototype.print = function () {};
+Board.prototype.print = function () {
+  for (row of this.grid) {
+    let new_row = row.map((piece) => (piece ? piece.toString() : " "));
+    console.log(new_row);
+  }
+};
 
 // DON'T TOUCH THIS CODE
 if (typeof window === "undefined") {
